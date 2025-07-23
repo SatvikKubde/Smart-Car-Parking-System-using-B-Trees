@@ -52,6 +52,8 @@ void initializeParkingSpaces() {
     }
 }
 
+
+
 // Collects all vehicles from the B+ Tree into an array
 void collectVehicles(BPTreeNode *node, Vehicle **vehicles, int *count) {
     if (!node) return;
@@ -289,6 +291,69 @@ void loadParkingSpaces() {
 #define VEHICLE_NUM_LEN 20 // Adjust based on your format
 
 #define MAX_VEHICLES 1000
+
+void displayVehiclesByAmountRange() {
+    int minAmount, maxAmount;
+    printf("Enter minimum amount: ");
+    scanf("%d", &minAmount);
+    printf("Enter maximum amount: ");
+    scanf("%d", &maxAmount);
+
+    // Start at the leftmost leaf node
+    BPTreeNode *current = root;
+
+    // Go down to the first leaf
+    while (current != NULL && !current->isLeaf) {
+        current = current->children[0];
+    }
+
+    if (current == NULL) {
+        printf("No vehicles in the system.\n");
+        return;
+    }
+
+    // Collect vehicles from leaf nodes only
+    Vehicle **filtered = (Vehicle **)malloc(1000 * sizeof(Vehicle *));  // Adjust size if needed
+    int filteredCount = 0;
+
+    while (current != NULL) {
+        for (int i = 0; i < current->numKeys; i++) {
+            Vehicle *v = current->keys[i];
+            if (v->amountPaid >= minAmount && v->amountPaid <= maxAmount) {
+                filtered[filteredCount++] = v;
+            }
+        }
+        current = current->next;  // move to the next leaf node
+    }
+
+    // Bubble Sort by amountPaid
+    for (int i = 0; i < filteredCount - 1; i++) {
+        for (int j = 0; j < filteredCount - i - 1; j++) {
+            if (filtered[j]->amountPaid > filtered[j + 1]->amountPaid) {
+                Vehicle *temp = filtered[j];
+                filtered[j] = filtered[j + 1];
+                filtered[j + 1] = temp;
+            }
+        }
+    }
+
+    // Display the filtered and sorted vehicles
+    printf("\nVehicles with amountPaid between %d and %d:\n", minAmount, maxAmount);
+    if (filteredCount == 0) {
+        printf("No vehicles found in the given amount range.\n");
+    } else {
+        for (int i = 0; i < filteredCount; i++) {
+            printf("Vehicle Number: %s | Owner: %s | Amount Paid: %d\n",
+                   filtered[i]->vehicleNumber,
+                   filtered[i]->ownerName,
+                   filtered[i]->amountPaid);
+        }
+    }
+
+    // Clean up
+    free(filtered);
+}
+
 
 int isExactDuplicate(Vehicle *v, Vehicle *savedList[], int count) {
     for (int i = 0; i < count; i++) {
@@ -695,7 +760,9 @@ int main() {
 
     while (1) {
         printf("\n1. Register Vehicle\n2. Vehicle Exit\n3. Display Vehicles\n");
-        printf("4. Display Parking Spaces\n5. Sort by Total Parkings\n6. Sort by Amount Paid\n7. Sort by Parking Space Usage\n8. Sort by Parking Space Revenue\n9. Exit\nEnter choice: ");
+        printf("4. Display Parking Spaces\n5. Sort by Total Parkings\n6. Sort by Amount Paid\n");
+        printf("7. Sort by Parking Space Usage\n8. Sort by Parking Space Revenue\n");
+        printf("9. Display Vehicles by Amount Range\n10. Exit\nEnter choice: ");
         scanf("%d", &choice);
         getchar();
 
@@ -732,6 +799,9 @@ int main() {
             sortByRevenue();
         }
         else if (choice == 9) {
+            displayVehiclesByAmountRange();
+        }
+        else if (choice == 10) {
             return 0;
         }
         else {
